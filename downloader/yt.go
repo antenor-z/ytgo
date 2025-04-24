@@ -15,10 +15,10 @@ func Download(videoId string, format string) error {
 }
 
 type yt_formats struct {
-	id          string
-	format_name string
-	resolution  string
-	fps         string
+	Id          string
+	Format_name string
+	Resolution  string
+	Fps         string
 }
 
 func GetFormats(videoId string) ([]yt_formats, error) {
@@ -40,10 +40,10 @@ func GetFormats(videoId string) ([]yt_formats, error) {
 			resolution := strings.TrimSpace(matches[3])
 			fps := matches[4]
 			formats = append(formats, yt_formats{
-				id:          id,
-				format_name: ext,
-				resolution:  resolution,
-				fps:         fps,
+				Id:          id,
+				Format_name: ext,
+				Resolution:  resolution,
+				Fps:         fps,
 			})
 		}
 	}
