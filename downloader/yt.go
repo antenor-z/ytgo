@@ -1,15 +1,22 @@
 package downloader
 
 import (
+	"fmt"
 	"os/exec"
 	"regexp"
 	"strings"
 )
 
 func Download(videoId string, format string) error {
-	err := exec.Command("yt-dlp", "-P", "public", "-f", format, "https://youtube.com/watch?v="+videoId).Start()
+	cmd := exec.Command(
+		"yt-dlp",
+		"-P", "public",
+		"-f", format,
+		"https://youtube.com/watch?v="+videoId,
+	)
+	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return err
+		return fmt.Errorf("yt-dlp failed: %v\n%s", err, string(output))
 	}
 	return nil
 }

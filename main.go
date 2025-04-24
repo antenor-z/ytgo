@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strings"
 	"time"
 	"ytgo/downloader"
 	"ytgo/noteConfig"
@@ -53,7 +54,7 @@ func getFormats(c *gin.Context) {
 func requestDownload(c *gin.Context) {
 	re := regexp.MustCompile(`[A-Za-z0-9_\-]{11}`)
 	video_id := re.FindString(c.Query("v"))
-	format := re.FindString(c.Query("f"))
+	format := c.Query("f")
 
 	err := downloader.Download(video_id, format)
 	if err != nil || video_id == "" {
@@ -64,14 +65,31 @@ func requestDownload(c *gin.Context) {
 }
 
 func Download(c *gin.Context) {
-	// re := regexp.MustCompile(`[A-Za-z0-9_\-]{11}`)
-	// video_id := re.FindString(c.Query("v"))
-	entries, err := os.ReadDir("./public")
-	if err != nil {
-		panic(err)
+	videoID := c.Query("v")
+	if videoID == "" {
+		c.JSON(400, gin.H{"error": "missing video id"})
+		return
 	}
 
-	for _, e := range entries {
-		fmt.Println(e.Name())
+	entries, err := os.ReadDir("./public")
+	if err != nil {
+		c.JSON(500, gin.H{"error": "failed to read download directory"})
+		return
 	}
+
+	// Look for a file that includes the video ID
+	for _, entry := range entries {
+		if !entry.IsDir() && containsVideoID(entry.Name(), videoID) {
+			filePath := "./public/" + entry.Name()
+			// Serve it as a file download
+			c.FileAttachment(filePath, entry.Name())
+			return
+		}
+	}
+
+	c.JSON(404, gin.H{"error": "file not found for video id"})
+}
+
+func containsVideoID(filename, videoID string) bool {
+	return strings.Contains(filename, videoID)
 }
