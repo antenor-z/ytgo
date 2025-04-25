@@ -1,55 +1,77 @@
 <!DOCTYPE html>
 <html>
-    <head>
+  <head>
+    <meta charset="utf-8" />
+    <title>YT Downloader</title>
+  </head>
+  <body>
+    <input id="url" type="text" placeholder="https://youtu.be/…" />
+    <button onclick="formats()">Get Formats</button>
 
-    </head>
-    <body>
-        <input id="url" type="text">
-        <button onclick="formats()">Download</button>
-    </body>
     <script>
-        async function formats() {
-            const url = document.getElementById("url").value.split("?v=").pop()
-            const result = await fetch("http://localhost:5100/api/formats?v=" + url)
-            if (result.status != 200) {
-                return
-            }
-            const formatTable = document.createElement("table")
-            const formats = await result.json()
-            formats.forEach(format => {
-                const tr = document.createElement("tr")
+      async function formats() {
+        const raw = document.getElementById("url").value
+        const videoId = raw.split("?v=").pop()
+        const res = await fetch(`http://localhost:5100/api/formats?v=${videoId}`)
+        if (res.status !== 200) return alert("Invalid video ID")
+        
+        const formats = await res.json()
+        const table = document.createElement("table")
+        table.innerHTML = `
+          <tr>
+            <th>ID</th><th>Format</th><th>Resolution</th><th>FPS</th><th>Action</th>
+          </tr>`
+        
+        formats.forEach(fmt => {
+          const tr = document.createElement("tr")
+          tr.innerHTML = `
+            <td>${fmt.id}</td>
+            <td>${fmt.formatName}</td>
+            <td>${fmt.resolution}</td>
+            <td>${fmt.fps}</td>
+            <td>
+              <button onclick="handleDownload('${videoId}','${fmt.id}', this)">
+                Download
+              </button>
+            </td>
+          `
+          table.appendChild(tr)
+        })
 
-                const id = document.createElement("td")
-                id.innerText = format["id"]
-                const formatName = document.createElement("td")
-                formatName.innerText = format["formatName"]
-                const resolution = document.createElement("td")
-                resolution.innerText = format["resolution"]
-                const fps = document.createElement("td")
-                fps.innerText = format["fps"]
-                const downloadLinkContainer = document.createElement("td")
-                const downloadLink = document.createElement("button")
-                downloadLink.innerText = "download"
-                downloadLinkContainer.appendChild(downloadLink)
+        document.body.appendChild(table)
+      }
 
-                tr.appendChild(id)
-                tr.appendChild(formatName)
-                tr.appendChild(resolution)
-                tr.appendChild(fps)
-                tr.appendChild(downloadLinkContainer)
+      async function handleDownload(videoId, formatId, btn) {
+        const downloadDiv = document.createElement("div")
+        document.getElementsByTagName("table")[0].replaceWith(downloadDiv)
+        downloadDiv.innerText = "Requesting…"
 
-                formatTable.appendChild(tr)
-            })
-            console.log(formatTable)
-            document.body.appendChild(formatTable)
+        const reqRes = await fetch(
+          `http://localhost:5100/api/download/request?v=${videoId}&f=${formatId}`
+        )
+        if (reqRes.status !== 200) {
+          return alert("Failed to start download")
         }
 
-        async function downloadRequest(video_id, format) {
-            const url = document.getElementById("url").value.split("?v=").pop()
-            const result = await fetch("http://localhost:5100/api/download?v=" + url + "&f=" + format)
-            if (result.status != 200) {
-                return
-            }
-        }
+        // Poll /ready until we get a 200
+        downloadDiv.innerText = "Waiting for file…"
+        const interval = setInterval(async () => {
+          const readyRes = await fetch(
+            `http://localhost:5100/api/download/ready?v=${videoId}`
+          )
+          if (readyRes.status === 200) {
+            clearInterval(interval)
+
+            // Show the real download link
+            const link = document.createElement("a")
+            link.href = `http://localhost:5100/api/download?v=${videoId}`
+            link.download = ""
+            link.innerText = "Click here to download!"
+            downloadDiv.innerText = ""
+            downloadDiv.appendChild(link)
+          }
+        }, 2000)
+      }
     </script>
+  </body>
 </html>

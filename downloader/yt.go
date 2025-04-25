@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os/exec"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -46,12 +47,18 @@ func GetFormats(videoId string) ([]yt_formats, error) {
 			ext := matches[2]
 			resolution := strings.TrimSpace(matches[3])
 			fps := matches[4]
-			formats = append(formats, yt_formats{
-				Id:          id,
-				Format_name: ext,
-				Resolution:  resolution,
-				Fps:         fps,
-			})
+			fps_int, err := strconv.Atoi(fps)
+			if err != nil {
+				continue
+			}
+			if fps_int >= 15 {
+				formats = append(formats, yt_formats{
+					Id:          id,
+					Format_name: ext,
+					Resolution:  resolution,
+					Fps:         fps,
+				})
+			}
 		}
 	}
 

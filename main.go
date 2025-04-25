@@ -21,12 +21,12 @@ func main() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 	r := gin.Default()
-	r.MaxMultipartMemory = 256 << 20 // 256MB file max
 	r.Use(cors.Default())
 
 	r.GET("/api/formats", getFormats)
 	r.GET("/api/download/request", requestDownload)
 	r.GET("/api/download", Download)
+	r.GET("/api/download/ready", IsVideoReady)
 
 	r.Run(":5100")
 }
@@ -75,6 +75,30 @@ func Download(c *gin.Context) {
 			filePath := "./public/" + entry.Name()
 			// Serve it as a file download
 			c.FileAttachment(filePath, entry.Name())
+			return
+		}
+	}
+
+	c.JSON(404, gin.H{"error": "file not found for video id"})
+}
+
+func IsVideoReady(c *gin.Context) {
+	videoID := c.Query("v")
+	if videoID == "" {
+		c.JSON(400, gin.H{"error": "missing video id"})
+		return
+	}
+
+	entries, err := os.ReadDir("./public")
+	if err != nil {
+		c.JSON(500, gin.H{"error": "failed to read download directory"})
+		return
+	}
+
+	// Look for a file that includes the video ID
+	for _, entry := range entries {
+		if !entry.IsDir() && containsVideoID(entry.Name(), videoID) {
+			c.JSON(200, gin.H{"status": "ok"})
 			return
 		}
 	}
