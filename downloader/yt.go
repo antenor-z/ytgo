@@ -1,7 +1,7 @@
 package downloader
 
 import (
-	"fmt"
+	"errors"
 	"os/exec"
 	"regexp"
 	"strings"
@@ -14,18 +14,18 @@ func Download(videoId string, format string) error {
 		"-f", format,
 		"https://youtube.com/watch?v="+videoId,
 	)
-	output, err := cmd.CombinedOutput()
+	err := cmd.Start()
 	if err != nil {
-		return fmt.Errorf("yt-dlp failed: %v\n%s", err, string(output))
+		return errors.New("yt-dlp failed on download")
 	}
 	return nil
 }
 
 type yt_formats struct {
-	Id          string
-	Format_name string
-	Resolution  string
-	Fps         string
+	Id          string `json:"id"`
+	Format_name string `json:"formatName"`
+	Resolution  string `json:"resolution"`
+	Fps         string `json:"fps"`
 }
 
 func GetFormats(videoId string) ([]yt_formats, error) {

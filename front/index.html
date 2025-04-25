@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+    <head>
+
+    </head>
+    <body>
+        <input id="url" type="text">
+        <button onclick="formats()">Download</button>
+    </body>
+    <script>
+        async function formats() {
+            const url = document.getElementById("url").value.split("?v=").pop()
+            const result = await fetch("http://localhost:5100/api/formats?v=" + url)
+            if (result.status != 200) {
+                return
+            }
+            const formatTable = document.createElement("table")
+            const formats = await result.json()
+            formats.forEach(format => {
+                const tr = document.createElement("tr")
+
+                const id = document.createElement("td")
+                id.innerText = format["id"]
+                const formatName = document.createElement("td")
+                formatName.innerText = format["formatName"]
+                const resolution = document.createElement("td")
+                resolution.innerText = format["resolution"]
+                const fps = document.createElement("td")
+                fps.innerText = format["fps"]
+                const downloadLinkContainer = document.createElement("td")
+                const downloadLink = document.createElement("button")
+                downloadLink.innerText = "download"
+                downloadLinkContainer.appendChild(downloadLink)
+
+                tr.appendChild(id)
+                tr.appendChild(formatName)
+                tr.appendChild(resolution)
+                tr.appendChild(fps)
+                tr.appendChild(downloadLinkContainer)
+
+                formatTable.appendChild(tr)
+            })
+            console.log(formatTable)
+            document.body.appendChild(formatTable)
+        }
+
+        async function downloadRequest(video_id, format) {
+            const url = document.getElementById("url").value.split("?v=").pop()
+            const result = await fetch("http://localhost:5100/api/download?v=" + url + "&f=" + format)
+            if (result.status != 200) {
+                return
+            }
+        }
+    </script>
+</html>
