@@ -12,7 +12,7 @@ func Download(videoId string, format string) error {
 	cmd := exec.Command(
 		"yt-dlp",
 		"-P", "public",
-		"-f", format,
+		"-f", format+"+bestaudio",
 		"https://youtube.com/watch?v="+videoId,
 	)
 	err := cmd.Start()
