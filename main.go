@@ -25,8 +25,9 @@ func main() {
 
 	r.GET("/api/formats", getFormats)
 	r.GET("/api/download/request", requestDownload)
-	r.GET("/api/download", Download)
-	r.GET("/api/download/ready", IsVideoReady)
+	r.GET("/api/download", download)
+	r.GET("/api/download/ready", isVideoReady)
+	r.GET("/", getMainPage)
 
 	r.Run(":5100")
 }
@@ -56,7 +57,7 @@ func requestDownload(c *gin.Context) {
 	c.JSON(200, gin.H{"video_id": video_id})
 }
 
-func Download(c *gin.Context) {
+func download(c *gin.Context) {
 	videoID := c.Query("v")
 	if videoID == "" {
 		c.JSON(400, gin.H{"error": "missing video id"})
@@ -82,7 +83,7 @@ func Download(c *gin.Context) {
 	c.JSON(404, gin.H{"error": "file not found for video id"})
 }
 
-func IsVideoReady(c *gin.Context) {
+func isVideoReady(c *gin.Context) {
 	videoID := c.Query("v")
 	if videoID == "" {
 		c.JSON(400, gin.H{"error": "missing video id"})
