@@ -4,7 +4,7 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN go build -o note
+RUN go build -o ytgo
 
 EXPOSE 5100
 
