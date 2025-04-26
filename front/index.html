@@ -19,13 +19,12 @@
         const table = document.createElement("table")
         table.innerHTML = `
           <tr>
-            <th>ID</th><th>Format</th><th>Resolution</th><th>FPS</th><th>Action</th>
+            <th>Format</th><th>Resolution</th><th>FPS</th><th>Action</th>
           </tr>`
         
         formats.forEach(fmt => {
           const tr = document.createElement("tr")
           tr.innerHTML = `
-            <td>${fmt.id}</td>
             <td>${fmt.formatName}</td>
             <td>${fmt.resolution}</td>
             <td>${fmt.fps}</td>
