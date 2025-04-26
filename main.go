@@ -107,5 +107,11 @@ func IsVideoReady(c *gin.Context) {
 }
 
 func containsVideoID(filename, videoID string) bool {
-	return strings.Contains(filename, videoID)
+	return strings.Contains(filename, videoID) &&
+		!strings.Contains(filename, ".part") &&
+		!strings.Contains(filename, ".ytdl")
+}
+
+func getMainPage(c *gin.Context) {
+	c.File("front/index.html")
 }
