@@ -3,11 +3,27 @@
   <head>
     <meta charset="utf-8" />
     <title>YT Downloader</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-SgOJa3DmI69IUzQ2PVdRZhwQ+dy64/BUtbMJw1MZ8t5HZApcHrRKUc4W0kG879m7" crossorigin="anonymous">
   </head>
-  <body>
-    <input id="url" type="text" placeholder="https://youtu.be/…" />
-    <button onclick="formats()">Get Formats</button>
-    <input id="p" type="text">
+  <body class="bg-light">
+
+    <div class="container py-5">
+      <h1 class="mb-4 text-center">A4 Downloader</h1>
+
+      <div class="mb-3">
+        <input class="form-control" id="url" type="text" placeholder="link" />
+      </div>
+
+      <div class="mb-3">
+        <input class="form-control" id="p" type="text" placeholder="Password">
+      </div>
+
+      <div class="d-grid gap-2 mb-5">
+        <button class="btn btn-primary" onclick="formats()">Get Formats</button>
+      </div>
+
+      <div id="output"></div>
+    </div>
 
     <script>
       async function formats() {
@@ -19,10 +35,19 @@
         
         const formats = await res.json()
         const table = document.createElement("table")
+        table.className = "table table-striped table-bordered"
+
         table.innerHTML = `
-          <tr>
-            <th>Format</th><th>Resolution</th><th>FPS</th><th>Action</th>
-          </tr>`
+          <thead class="table-dark">
+            <tr>
+              <th>Format</th>
+              <th>Resolution</th>
+              <th>FPS</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        `
         
         formats.forEach(fmt => {
           const tr = document.createElement("tr")
@@ -31,20 +56,26 @@
             <td>${fmt.resolution}</td>
             <td>${fmt.fps}</td>
             <td>
-              <button onclick="handleDownload('${videoId}','${fmt.id}', this)">
+              <button class="btn btn-success btn-sm" onclick="handleDownload('${videoId}','${fmt.id}', this)">
                 Download
               </button>
             </td>
           `
-          table.appendChild(tr)
+          table.querySelector('tbody').appendChild(tr)
         })
 
-        document.body.appendChild(table)
+        const outputDiv = document.getElementById("output")
+        outputDiv.innerHTML = ""  // Clear previous output
+        outputDiv.appendChild(table)
       }
 
       async function handleDownload(videoId, formatId, btn) {
         const downloadDiv = document.createElement("div")
-        document.getElementsByTagName("table")[0].replaceWith(downloadDiv)
+        downloadDiv.className = "alert alert-info text-center"
+        
+        document.getElementById("output").innerHTML = ""
+        document.getElementById("output").appendChild(downloadDiv)
+
         downloadDiv.innerText = "Requesting…"
 
         const reqRes = await fetch(
@@ -68,11 +99,15 @@
             link.href = `/api/download?v=${videoId}&p=${window.p}`
             link.download = ""
             link.innerText = "Click here to download!"
-            downloadDiv.innerText = ""
+            link.className = "btn btn-success"
+
+            downloadDiv.innerHTML = ""
             downloadDiv.appendChild(link)
           }
         }, 2000)
       }
     </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js" integrity="sha384-k6d4wzSIapyDyv1kpU366/PK5hCdSbCRGRCMv+eplOQJWyd1fbcAu9OCUj5zNLiq" crossorigin="anonymous"></script>
   </body>
 </html>
