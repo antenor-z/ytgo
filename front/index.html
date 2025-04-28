@@ -36,8 +36,8 @@
         const outputDiv = document.getElementById("output")
         outputDiv.appendChild(downloadDiv)
         const res = await fetch(`/api/formats?v=${videoId}&p=${window.p}`)
-        if (res.status !== 200) return alert("Invalid video ID")
         downloadDiv.remove()
+        if (res.status !== 200) return alert("Invalid video ID")
         const formats = await res.json()
         const table = document.createElement("table")
         table.className = "table table-striped table-bordered"
