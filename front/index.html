@@ -15,7 +15,7 @@
       </div>
 
       <div class="mb-3">
-        <input class="form-control" id="p" type="text" placeholder="Password">
+        <input class="form-control" id="p" type="password" placeholder="Password">
       </div>
 
       <div class="d-grid gap-2 mb-5">
@@ -30,9 +30,12 @@
         window.p = document.getElementById("p").value
         const raw = document.getElementById("url").value
         const videoId = raw.split("?v=").pop()
+        const downloadDiv = document.createElement("div")
+        downloadDiv.className = "alert alert-info text-center"
+        downloadDiv.innerText = "Getting formats..."
         const res = await fetch(`/api/formats?v=${videoId}&p=${window.p}`)
         if (res.status !== 200) return alert("Invalid video ID")
-        
+        downloadDiv.remove()
         const formats = await res.json()
         const table = document.createElement("table")
         table.className = "table table-striped table-bordered"
