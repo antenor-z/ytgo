@@ -33,6 +33,7 @@
         const downloadDiv = document.createElement("div")
         downloadDiv.className = "alert alert-info text-center"
         downloadDiv.innerText = "Getting formats..."
+        outputDiv.appendChild(downloadDiv)
         const res = await fetch(`/api/formats?v=${videoId}&p=${window.p}`)
         if (res.status !== 200) return alert("Invalid video ID")
         downloadDiv.remove()
