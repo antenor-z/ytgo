@@ -33,6 +33,7 @@
         const downloadDiv = document.createElement("div")
         downloadDiv.className = "alert alert-info text-center"
         downloadDiv.innerText = "Getting formats..."
+        const outputDiv = document.getElementById("output")
         outputDiv.appendChild(downloadDiv)
         const res = await fetch(`/api/formats?v=${videoId}&p=${window.p}`)
         if (res.status !== 200) return alert("Invalid video ID")
@@ -68,7 +69,6 @@
           table.querySelector('tbody').appendChild(tr)
         })
 
-        const outputDiv = document.getElementById("output")
         outputDiv.innerHTML = ""  // Clear previous output
         outputDiv.appendChild(table)
       }
