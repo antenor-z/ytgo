@@ -1,4 +1,4 @@
-package noteConfig
+package config
 
 import (
 	"os"
@@ -7,7 +7,7 @@ import (
 )
 
 type Server struct {
-	Domain    string `toml:"domain"`
+	Password  string `toml:"password"`
 	DebugMode bool   `toml:"debugmode"`
 }
 type Config struct {
@@ -27,8 +27,8 @@ func ConfigInit() {
 	}
 }
 
-func GetDomain() string {
-	return config.Server.Domain
+func GetPassword() string {
+	return config.Server.Password
 }
 
 func IsDebug() bool {

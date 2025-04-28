@@ -5,17 +5,17 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"ytgo/config"
 	"ytgo/downloader"
-	"ytgo/noteConfig"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	noteConfig.ConfigInit()
+	config.ConfigInit()
 
-	if noteConfig.IsDebug() {
+	if config.IsDebug() {
 		gin.SetMode(gin.DebugMode)
 	} else {
 		gin.SetMode(gin.ReleaseMode)
@@ -23,13 +23,26 @@ func main() {
 	r := gin.Default()
 	r.Use(cors.Default())
 
-	r.GET("/api/formats", getFormats)
-	r.GET("/api/download/request", requestDownload)
-	r.GET("/api/download", download)
-	r.GET("/api/download/ready", isVideoReady)
+	internal := r.Group("/")
+	internal.Use(AuthMiddleware())
+
+	internal.GET("/api/formats", getFormats)
+	internal.GET("/api/download/request", requestDownload)
+	internal.GET("/api/download", download)
+	internal.GET("/api/download/ready", isVideoReady)
 	r.GET("/", getMainPage)
 
 	r.Run(":5100")
+}
+
+func AuthMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		password := c.Query("p")
+		if password != config.GetPassword() {
+			c.JSON(401, "unauthorized")
+			c.Abort()
+		}
+	}
 }
 
 func getFormats(c *gin.Context) {

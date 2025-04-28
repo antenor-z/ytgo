@@ -7,12 +7,14 @@
   <body>
     <input id="url" type="text" placeholder="https://youtu.be/…" />
     <button onclick="formats()">Get Formats</button>
+    <input id="p" type="text">
 
     <script>
       async function formats() {
+        window.p = document.getElementById("p").value
         const raw = document.getElementById("url").value
         const videoId = raw.split("?v=").pop()
-        const res = await fetch(`/api/formats?v=${videoId}`)
+        const res = await fetch(`/api/formats?v=${videoId}&p=${window.p}`)
         if (res.status !== 200) return alert("Invalid video ID")
         
         const formats = await res.json()
@@ -46,7 +48,7 @@
         downloadDiv.innerText = "Requesting…"
 
         const reqRes = await fetch(
-          `/api/download/request?v=${videoId}&f=${formatId}`
+          `/api/download/request?v=${videoId}&f=${formatId}&p=${window.p}`
         )
         if (reqRes.status !== 200) {
           return alert("Failed to start download")
@@ -56,14 +58,14 @@
         downloadDiv.innerText = "Waiting for file…"
         const interval = setInterval(async () => {
           const readyRes = await fetch(
-            `/api/download/ready?v=${videoId}`
+            `/api/download/ready?v=${videoId}&p=${window.p}`
           )
           if (readyRes.status === 200) {
             clearInterval(interval)
 
             // Show the real download link
             const link = document.createElement("a")
-            link.href = `/api/download?v=${videoId}`
+            link.href = `/api/download?v=${videoId}&p=${window.p}`
             link.download = ""
             link.innerText = "Click here to download!"
             downloadDiv.innerText = ""
