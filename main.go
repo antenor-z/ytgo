@@ -99,7 +99,11 @@ func download(c *gin.Context) {
 	c.JSON(404, gin.H{"error": "file not found for video id"})
 }
 
-var upgrader = websocket.Upgrader{}
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
+}
 
 func isVideoReady(c *gin.Context) {
 	videoID := c.Query("v")
