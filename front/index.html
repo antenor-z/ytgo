@@ -35,8 +35,9 @@
             const videoId = raw.split("?v=").pop()
             const downloadDiv = document.createElement("div")
             downloadDiv.className = "alert alert-info text-center"
-            downloadDiv.innerText = "Getting formats..."
+            downloadDiv.innerHTML = "<img style='width: 20px; opacity: 50%' src='/static/spinner.gif'> Getting formats..."
             const outputDiv = document.getElementById("output")
+            outputDiv.innerHTML = ""
             outputDiv.appendChild(downloadDiv)
             const res = await fetch(`/api/formats?v=${videoId}&p=${window.p}`)
             downloadDiv.remove()
@@ -51,7 +52,8 @@
               <th>Format</th>
               <th>Resolution</th>
               <th>FPS</th>
-              <th>Action</th>
+              <th>Size</th>
+              <th></th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -63,6 +65,7 @@
             <td>${fmt.formatName}</td>
             <td>${fmt.resolution}</td>
             <td>${fmt.fps}</td>
+            <td>${fmt.size}</td>
             <td>
               <button class="btn btn-success btn-sm" onclick="handleDownload('${videoId}','${fmt.id}', this)">
                 Download
@@ -111,7 +114,7 @@
                     downloadDiv.innerHTML = ""
                     downloadDiv.appendChild(link)
                 } else if (data.status === "waiting") {
-                    downloadDiv.innerText = "Waiting for file…"
+                    downloadDiv.innerHTML = "<img style='width: 20px; opacity: 50%' src='/static/spinner.gif'> Waiting for file…"
                 } else if (data.error) {
                     downloadDiv.innerText = "Error: " + data.error
                     socket.close()

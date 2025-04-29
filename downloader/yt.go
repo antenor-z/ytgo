@@ -27,6 +27,7 @@ type yt_formats struct {
 	Format_name string `json:"formatName"`
 	Resolution  string `json:"resolution"`
 	Fps         string `json:"fps"`
+	Size        string `json:"size"`
 }
 
 func GetFormats(videoId string) ([]yt_formats, error) {
@@ -36,7 +37,7 @@ func GetFormats(videoId string) ([]yt_formats, error) {
 		return nil, err
 	}
 
-	re := regexp.MustCompile(`^(\S+)\s+(\S+)\s+(.*?)\s+(\d*)(?:\s+\S*)?\s+\|`)
+	re := regexp.MustCompile(`^(\d+) *(\w+) *([\dx]+) *(\d+) *[│| ]*([\d.GMKiB]+) *(\w+) *https`)
 	lines := strings.Split(string(output), "\n")
 	var formats []yt_formats
 
@@ -48,16 +49,19 @@ func GetFormats(videoId string) ([]yt_formats, error) {
 			resolution := strings.TrimSpace(matches[3])
 			fps := matches[4]
 			fps_int, err := strconv.Atoi(fps)
+			size := matches[5]
+			// vbr := matches[6]
 			if err != nil {
 				continue
 			}
 			if fps_int >= 15 {
-				formats = append(formats, yt_formats{
+				formats = append([]yt_formats{{
 					Id:          id,
 					Format_name: ext,
 					Resolution:  resolution,
 					Fps:         fps,
-				})
+					Size:        size,
+				}}, formats...)
 			}
 		}
 	}

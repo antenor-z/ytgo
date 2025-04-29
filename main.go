@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 	"regexp"
@@ -34,6 +33,7 @@ func main() {
 	internal.GET("/api/download", download)
 	internal.GET("/api/download/ready", isVideoReady)
 	r.GET("/", getMainPage)
+	r.GET("/static/:fileName", getStaticFile)
 
 	r.Run(":5100")
 }
@@ -56,14 +56,14 @@ func getFormats(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "invalid video id"})
 		return
 	}
-	fmt.Print(formats)
 	c.JSON(200, formats)
 }
 
 func requestDownload(c *gin.Context) {
 	re := regexp.MustCompile(`[A-Za-z0-9_\-]{11}`)
+	reFormat := regexp.MustCompile(`[0-9]{3}`)
 	video_id := re.FindString(c.Query("v"))
-	format := c.Query("f")
+	format := reFormat.FindString(c.Query("f"))
 
 	err := downloader.Download(video_id, format)
 	if err != nil || video_id == "" {
@@ -147,4 +147,15 @@ func containsVideoID(filename, videoID string) bool {
 
 func getMainPage(c *gin.Context) {
 	c.File("front/index.html")
+}
+
+func getStaticFile(c *gin.Context) {
+	path := "front/static/" + c.Param("fileName")
+	_, err := os.Stat(path)
+	if err != nil {
+		c.Abort()
+		return
+	}
+
+	c.File(path)
 }
