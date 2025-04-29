@@ -2,14 +2,17 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"regexp"
 	"strings"
+	"time"
 	"ytgo/config"
 	"ytgo/downloader"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 )
 
 func main() {
@@ -96,28 +99,40 @@ func download(c *gin.Context) {
 	c.JSON(404, gin.H{"error": "file not found for video id"})
 }
 
+var upgrader = websocket.Upgrader{}
+
 func isVideoReady(c *gin.Context) {
 	videoID := c.Query("v")
-	if videoID == "" {
-		c.JSON(400, gin.H{"error": "missing video id"})
-		return
-	}
 
-	entries, err := os.ReadDir("./public")
+	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
-		c.JSON(500, gin.H{"error": "failed to read download directory"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to upgrade to ws"})
 		return
 	}
 
-	// Look for a file that includes the video ID
-	for _, entry := range entries {
-		if !entry.IsDir() && containsVideoID(entry.Name(), videoID) {
-			c.JSON(200, gin.H{"status": "ok"})
+	defer conn.Close()
+	for {
+		if videoID == "" {
+			conn.WriteJSON(gin.H{"error": "missing video id"})
 			return
 		}
-	}
 
-	c.JSON(404, gin.H{"error": "file not found for video id"})
+		entries, err := os.ReadDir("./public")
+		if err != nil {
+			conn.WriteJSON(gin.H{"error": "failed to read download directory"})
+			return
+		}
+
+		for _, entry := range entries {
+			if !entry.IsDir() && containsVideoID(entry.Name(), videoID) {
+				conn.WriteJSON(gin.H{"status": "ok"})
+				return
+			}
+		}
+
+		conn.WriteJSON(gin.H{"status": "waiting"})
+		time.Sleep(1 * time.Second)
+	}
 }
 
 func containsVideoID(filename, videoID string) bool {
