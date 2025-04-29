@@ -92,7 +92,8 @@
                 return alert("Failed to start download");
             }
 
-            const socket = new WebSocket(`ws://${location.host}/api/download/ready?v=${videoId}&p=${window.p}`);
+            const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
+            const socket = new WebSocket(`${protocol}://${location.host}/api/download/ready?v=${videoId}&p=${window.p}`);
 
             socket.onmessage = function (event) {
                 const data = JSON.parse(event.data);
