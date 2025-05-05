@@ -2,13 +2,16 @@ package downloader
 
 import (
 	"errors"
+	"os"
 	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func Download(videoId string, format string) error {
+	delOlderOneHour()
 	cmd := exec.Command(
 		"yt-dlp",
 		"-P", "public",
@@ -67,4 +70,20 @@ func GetFormats(videoId string) ([]yt_formats, error) {
 	}
 
 	return formats, nil
+}
+
+func delOlderOneHour() {
+	entries, err := os.ReadDir("./public")
+	if err != nil {
+		return
+	}
+	for _, entry := range entries {
+		info, err := entry.Info()
+		if err != nil {
+			continue
+		}
+		if time.Since(info.ModTime()) > time.Hour {
+			os.Remove(entry.Name())
+		}
+	}
 }
