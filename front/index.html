@@ -95,13 +95,15 @@
                 return alert("Failed to start download");
             }
 
+            var isCompleted = false // In iOS devices the download button appears and then connection errors
             const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-            const socket = new WebSocket(`${protocol}://${location.host}/api/download/ready?v=${videoId}&p=${window.p}`);
+            const socket = new WebSocket(`${protocol}://${location.host}/api/download/ready?v=${videoId}&p=${window.p}`)
 
             socket.onmessage = function (event) {
                 const data = JSON.parse(event.data);
 
                 if (data.status === "ok") {
+                    isCompleted = true
                     socket.close()
 
                     // Show the real download link
@@ -116,8 +118,10 @@
                 } else if (data.status === "waiting") {
                     downloadDiv.innerHTML = "<img style='width: 20px; opacity: 50%' src='/static/spinner.gif'> Waiting for file…"
                 } else if (data.error) {
-                    downloadDiv.innerText = "Error: " + data.error
-                    socket.close()
+                    if (!isCompleted) {
+                        downloadDiv.innerText = "Error: " + data.error
+                        socket.close()
+                    }
                 }
             }
 
