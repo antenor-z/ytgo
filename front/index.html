@@ -126,9 +126,11 @@
             }
 
             socket.onerror = function (err) {
-                console.error("WebSocket error", err);
-                downloadDiv.innerText = "Connection error!"
-            };
+                if (!isCompleted) {
+                    console.error("WebSocket error", err);
+                    downloadDiv.innerText = "Connection error!"
+                }
+            }
         }
 
     </script>
