@@ -11,7 +11,7 @@ import (
 )
 
 func Download(videoId string, format string) error {
-	delOlderOneHour()
+	delOlder()
 	cmd := exec.Command(
 		"yt-dlp",
 		"-P", "public",
@@ -72,7 +72,7 @@ func GetFormats(videoId string) ([]yt_formats, error) {
 	return formats, nil
 }
 
-func delOlderOneHour() {
+func delOlder() {
 	entries, err := os.ReadDir("./public")
 	if err != nil {
 		return
@@ -82,7 +82,7 @@ func delOlderOneHour() {
 		if err != nil {
 			continue
 		}
-		if time.Since(info.ModTime()) > time.Hour {
+		if time.Since(info.ModTime()) > 15*time.Minute {
 			os.Remove(entry.Name())
 		}
 	}
