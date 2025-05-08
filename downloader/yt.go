@@ -112,8 +112,8 @@ func delOlder() {
 		if err != nil {
 			continue
 		}
-		if time.Since(info.ModTime()) > 15*time.Minute {
-			os.Remove(entry.Name())
+		if entry.IsDir() && time.Since(info.ModTime()) > 15*time.Minute {
+			os.RemoveAll(entry.Name())
 		}
 	}
 }
