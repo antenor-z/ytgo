@@ -48,7 +48,9 @@
             const res = await fetch(`/api/formats?v=${videoId}&p=${window.p}`)
             downloadDiv.remove()
             if (res.status !== 200) return alert("Invalid video ID")
-            const formats = await res.json()
+            const rJson = await res.json()
+            window.token = rJson.token
+            const formats = rJson.formats
             const table = document.createElement("table")
             table.className = "table table-striped table-bordered"
 
@@ -95,7 +97,7 @@
             downloadDiv.innerText = "Requesting…";
 
             const reqRes = await fetch(
-                `/api/download/request?v=${videoId}&f=${formatId}&p=${window.p}`
+                `/api/download/request?f=${formatId}&t=${window.token}&p=${window.p}`
             );
             if (reqRes.status !== 200) {
                 return alert("Failed to start download");
@@ -103,7 +105,7 @@
 
             var isCompleted = false // In iOS devices the download button appears and then connection errors
             const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-            const socket = new WebSocket(`${protocol}://${location.host}/api/download/ready?v=${videoId}&p=${window.p}`)
+            const socket = new WebSocket(`${protocol}://${location.host}/api/download/ready?t=${window.token}&p=${window.p}`)
 
             socket.onmessage = function (event) {
                 const data = JSON.parse(event.data);
@@ -114,7 +116,7 @@
 
                     // Show the real download link
                     const link = document.createElement("a")
-                    link.href = `/api/download?v=${videoId}&p=${window.p}`
+                    link.href = `/api/download/file?t=${window.token}&p=${window.p}`
                     link.download = "";
                     link.innerText = "Click here to download!"
                     link.className = "btn btn-success"

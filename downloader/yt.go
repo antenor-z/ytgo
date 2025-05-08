@@ -1,31 +1,40 @@
 package downloader
 
 import (
+	"crypto/rand"
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
+	"path"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 )
 
-func Download(videoId string, format string) error {
+func Download(format string, token string) error {
 	delOlder()
+	fileBytes, err := os.ReadFile(filepath.Join("./public", token, "url.txt"))
+	if err != nil {
+		return err
+	}
+	os.Remove(filepath.Join("./public", token, "url.txt"))
 	cmd := exec.Command(
 		"yt-dlp",
-		"-P", "public",
+		"-P", path.Join("./public", token),
 		"-f", format+"+bestaudio",
-		"https://youtube.com/watch?v="+videoId,
+		string(fileBytes),
 	)
-	err := cmd.Start()
+	err = cmd.Start()
 	if err != nil {
 		return errors.New("yt-dlp failed on download")
 	}
 	return nil
 }
 
-type yt_formats struct {
+type YtFormatItem struct {
 	Id          string `json:"id"`
 	Format_name string `json:"formatName"`
 	Resolution  string `json:"resolution"`
@@ -33,16 +42,32 @@ type yt_formats struct {
 	Size        string `json:"size"`
 }
 
-func GetFormats(videoId string) ([]yt_formats, error) {
-	cmd := exec.Command("yt-dlp", "-F", "https://youtube.com/watch?v="+videoId)
+func CreateDestinationDir(videoId string) (string, error) {
+	url := "https://youtube.com/watch?v=" + videoId
+	dirName := tokenGenerator()
+	err := os.MkdirAll(filepath.Join("./public", dirName), os.ModePerm)
+	if err != nil {
+		return "", err
+	}
+	err = os.WriteFile(filepath.Join("./public", dirName, "url.txt"), []byte(url), os.ModePerm)
+	if err != nil {
+		return "", err
+	}
+
+	return dirName, nil
+}
+
+func GetFormats(videoId string) ([]YtFormatItem, error) {
+	url := "https://youtube.com/watch?v=" + videoId
+	cmd := exec.Command("yt-dlp", "-F", url)
 	output, err := cmd.Output()
 	if err != nil {
-		return nil, err
+		return []YtFormatItem{}, err
 	}
 
 	re := regexp.MustCompile(`^(\d+) *(\w+) *([\dx]+) *(\d+) *[│| ]*([\d.GMKiB]+) *(\w+) *https`)
 	lines := strings.Split(string(output), "\n")
-	var formats []yt_formats
+	var formats []YtFormatItem
 
 	for _, line := range lines {
 		matches := re.FindStringSubmatch(line)
@@ -58,7 +83,7 @@ func GetFormats(videoId string) ([]yt_formats, error) {
 				continue
 			}
 			if fps_int >= 15 {
-				formats = append([]yt_formats{{
+				formats = append([]YtFormatItem{{
 					Id:          id,
 					Format_name: ext,
 					Resolution:  resolution,
@@ -72,6 +97,11 @@ func GetFormats(videoId string) ([]yt_formats, error) {
 	return formats, nil
 }
 
+func tokenGenerator() string {
+	b := make([]byte, 8)
+	rand.Read(b)
+	return fmt.Sprintf("%x", b)
+}
 func delOlder() {
 	entries, err := os.ReadDir("./public")
 	if err != nil {

@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 	"os"
+	"path"
 	"regexp"
 	"strings"
 	"time"
@@ -30,7 +31,7 @@ func main() {
 
 	internal.GET("/api/formats", getFormats)
 	internal.GET("/api/download/request", requestDownload)
-	internal.GET("/api/download", download)
+	internal.GET("/api/download/file", download)
 	internal.GET("/api/download/ready", isVideoReady)
 	r.GET("/", getMainPage)
 	r.GET("/static/:fileName", getStaticFile)
@@ -42,10 +43,15 @@ func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		password := c.Query("p")
 		if password != config.GetPassword() {
-			c.JSON(401, "unauthorized")
+			c.JSON(401, gin.H{"error": "unauthorized"})
 			c.Abort()
 		}
 	}
+}
+
+type yt_formats struct {
+	Token   string                    `json:"token"`
+	Formats []downloader.YtFormatItem `json:"formats"`
 }
 
 func getFormats(c *gin.Context) {
@@ -56,44 +62,40 @@ func getFormats(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "invalid video id"})
 		return
 	}
-	c.JSON(200, formats)
+	token, err := downloader.CreateDestinationDir(video_id)
+	if err != nil || video_id == "" {
+		c.JSON(400, gin.H{"error": "invalid video id"})
+		return
+	}
+	c.JSON(200, yt_formats{token, formats})
 }
 
 func requestDownload(c *gin.Context) {
-	re := regexp.MustCompile(`[A-Za-z0-9_\-]{11}`)
 	reFormat := regexp.MustCompile(`[0-9]{3}`)
-	video_id := re.FindString(c.Query("v"))
+	token := c.Query("t")
 	format := reFormat.FindString(c.Query("f"))
 
-	err := downloader.Download(video_id, format)
-	if err != nil || video_id == "" {
+	err := downloader.Download(format, token)
+	if err != nil || token == "" {
 		c.JSON(400, gin.H{"error": "invalid video id or format"})
 		return
 	}
-	c.JSON(200, gin.H{"video_id": video_id})
+	c.JSON(200, gin.H{"status": "ok"})
 }
 
 func download(c *gin.Context) {
-	videoID := c.Query("v")
-	if videoID == "" {
-		c.JSON(400, gin.H{"error": "missing video id"})
-		return
-	}
+	token := c.Query("t")
 
-	entries, err := os.ReadDir("./public")
+	dirPath := path.Join("./public", token)
+	entries, err := os.ReadDir(dirPath)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "failed to read download directory"})
 		return
 	}
 
-	// Look for a file that includes the video ID
-	for _, entry := range entries {
-		if !entry.IsDir() && containsVideoID(entry.Name(), videoID) {
-			filePath := "./public/" + entry.Name()
-			// Serve it as a file download
-			c.FileAttachment(filePath, entry.Name())
-			return
-		}
+	if len(entries) != 0 {
+		c.FileAttachment(path.Join(dirPath, entries[0].Name()), entries[0].Name())
+		return
 	}
 
 	c.JSON(404, gin.H{"error": "file not found for video id"})
@@ -106,7 +108,7 @@ var upgrader = websocket.Upgrader{
 }
 
 func isVideoReady(c *gin.Context) {
-	videoID := c.Query("v")
+	token := c.Query("t")
 
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
@@ -116,33 +118,28 @@ func isVideoReady(c *gin.Context) {
 
 	defer conn.Close()
 	for {
-		if videoID == "" {
-			conn.WriteJSON(gin.H{"error": "missing video id"})
-			return
-		}
-
-		entries, err := os.ReadDir("./public")
+		time.Sleep(time.Second * 2)
+		entries, err := os.ReadDir(path.Join("./public", token))
 		if err != nil {
-			conn.WriteJSON(gin.H{"error": "failed to read download directory"})
+			conn.WriteJSON(gin.H{"error": err.Error()})
 			return
 		}
 
-		for _, entry := range entries {
-			if !entry.IsDir() && containsVideoID(entry.Name(), videoID) {
+		if len(entries) == 1 {
+			if !entries[0].IsDir() && videoReady(entries[0].Name()) {
 				conn.WriteJSON(gin.H{"status": "ok"})
 				return
 			}
 		}
 
 		conn.WriteJSON(gin.H{"status": "waiting"})
-		time.Sleep(1 * time.Second)
 	}
 }
 
-func containsVideoID(filename, videoID string) bool {
-	return strings.Contains(filename, videoID) &&
-		!strings.Contains(filename, ".part") &&
-		!strings.Contains(filename, ".ytdl")
+func videoReady(filename string) bool {
+	return !strings.Contains(filename, ".part") &&
+		!strings.Contains(filename, ".ytdl") &&
+		!strings.Contains(filename, ".txt")
 }
 
 func getMainPage(c *gin.Context) {
