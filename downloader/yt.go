@@ -113,7 +113,7 @@ func delOlder() {
 			continue
 		}
 		if entry.IsDir() && time.Since(info.ModTime()) > 15*time.Minute {
-			os.RemoveAll(entry.Name())
+			os.RemoveAll(path.Join("public", entry.Name()))
 		}
 	}
 }
